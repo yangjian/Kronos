@@ -30,7 +30,7 @@ final class NTPClientTests: XCTestCase {
             NTPClient().query(pool: "0.pool.ntp.org", numberOfSamples: 1, maximumServers: 1)
             { offset2, _, _ in
                 XCTAssertNotNil(offset2)
-                XCTAssertLessThan(abs(offset! - offset2!), 0.10)
+                XCTAssertLessThan(abs(offset!.0 - offset2!.0), 0.10)
                 expectation.fulfill()
             }
         }

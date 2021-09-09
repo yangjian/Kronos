@@ -66,22 +66,22 @@ public struct Clock {
     /// - parameter completion: A closure that will be called after _all_ the NTP calls are finished.
     /// - parameter first:      A closure that will be called after the first valid date is calculated.
     public static func sync(from pool: String = "time.apple.com", samples: Int = 4,
-                            first: ((Date, TimeInterval) -> Void)? = nil,
-                            completion: ((Date?, TimeInterval?) -> Void)? = nil)
+                            first: ((Date, TimeInterval, TimeInterval) -> Void)? = nil,
+                            completion: ((Date?, TimeInterval?, TimeInterval?) -> Void)? = nil)
     {
         self.loadFromDefaults()
 
-        NTPClient().query(pool: pool, numberOfSamples: samples) { offset, done, total in
-            if let offset = offset {
+        NTPClient().query(pool: pool, numberOfSamples: samples) { offsetDelay, done, total in
+            if let (offset, delay) = offsetDelay {
                 self.stableTime = TimeFreeze(offset: offset)
 
                 if done == 1, let now = self.now {
-                    first?(now, offset)
+                    first?(now, offset, delay)
                 }
             }
 
             if done == total {
-                completion?(self.now, offset)
+                completion?(self.now, offsetDelay?.0, offsetDelay?.1)
             }
         }
     }

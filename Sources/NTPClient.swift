@@ -27,7 +27,7 @@ final class NTPClient {
     func query(pool: String = "time.apple.com", version: Int8 = 3, port: Int = 123,
                numberOfSamples: Int = kDefaultSamples, maximumServers: Int = kMaximumNTPServers,
                timeout: CFTimeInterval = kDefaultTimeout,
-               progress: @escaping (TimeInterval?, Int, Int) -> Void)
+               progress: @escaping ((TimeInterval, TimeInterval)?, Int, Int) -> Void)
     {
         var servers: [InternetAddress: [NTPPacket]] = [:]
         var completed: Int = 0
@@ -40,7 +40,7 @@ final class NTPClient {
                     completed += 1
 
                     let responses = Array(servers.values)
-                    progress(try? self.offset(from: responses), completed, totalQueries)
+                    progress(try? self.offsetDelay(from: responses), completed, totalQueries)
                 }
 
                 guard let PDU = packet else {
@@ -121,7 +121,7 @@ final class NTPClient {
 
     // MARK: - Private helpers (NTP Calculation)
 
-    private func offset(from responses: [[NTPPacket]]) throws -> TimeInterval {
+    private func offsetDelay(from responses: [[NTPPacket]]) throws -> (TimeInterval, TimeInterval) {
         let now = currentTime()
         var bestResponses: [NTPPacket] = []
         for serverResponses in responses {
@@ -139,7 +139,8 @@ final class NTPClient {
         }
 
         bestResponses.sort { $0.offset < $1.offset }
-        return bestResponses[bestResponses.count / 2].offset
+        let best = bestResponses[bestResponses.count / 2];
+        return (best.offset, best.delay)
     }
 
     // MARK: - Private helpers (CFSocket)
